@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Strange Excel — Episodio 1</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsuites@4/dist/jsuites.css" type="text/css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4/dist/jspreadsheet.css" type="text/css" />
+
+<link rel="stylesheet" href="css/style.css?v=13" />
+</head>
+<body>
+
+<div id="crt-overlay"></div>
+
+<div id="game">
+
+  <!-- Mapa de misiones -->
+  <section id="map-screen" class="screen hidden">
+    <h1 id="map-title">STRANGE EXCEL</h1>
+    <p id="map-subtitle">Vallenoche, 1986. Algo raro pasa con los números del pueblo.</p>
+    <div id="map-missions"></div>
+  </section>
+
+  <!-- Pantalla de dialogo / historia -->
+  <section id="scene-screen" class="screen">
+    <div id="scene-backdrop"></div>
+    <div id="portrait-wrap"><div id="portrait"></div></div>
+
+    <div id="dialogue-box">
+      <div id="speaker-name"></div>
+      <div id="dialogue-text"></div>
+      <button id="btn-continue" class="pixel-btn">▶ continuar</button>
+    </div>
+  </section>
+
+  <!-- Pantalla de entrenamiento (tutorial interactivo) -->
+  <section id="tutorial-screen" class="screen hidden">
+    <h1 id="tutorial-title">ENTRENAMIENTO</h1>
+
+    <div id="tutorial-panel">
+      <div id="tutorial-progress"></div>
+      <div id="tutorial-text"></div>
+      <div id="tutorial-note"></div>
+    </div>
+
+    <div class="formula-bar" id="fbar-tutorial">
+      <span class="fb-cell">A1</span><span class="fb-fx">fx</span>
+      <input class="fb-input" spellcheck="false" autocomplete="off" />
+    </div>
+    <div id="tutorial-sheet"></div>
+
+    <div id="tutorial-controls">
+      <button id="btn-tutorial-done" class="pixel-btn hidden">ir a la misión ▶</button>
+      <button id="btn-skip-tutorial" class="pixel-btn ghost">saltar entrenamiento</button>
+    </div>
+  </section>
+
+  <!-- Pantalla de la mision (hoja de calculo) -->
+  <section id="puzzle-screen" class="screen hidden">
+    <h1 id="puzzle-title">EL REGISTRO QUE NO CIERRA</h1>
+
+    <div id="puzzle-instructions"></div>
+
+    <div class="formula-bar" id="fbar-mission">
+      <span class="fb-cell">A1</span><span class="fb-fx">fx</span>
+      <input class="fb-input" spellcheck="false" autocomplete="off" />
+    </div>
+    <div id="spreadsheet"></div>
+
+    <div id="puzzle-controls">
+      <button id="btn-verify" class="pixel-btn">verificar</button>
+      <button id="btn-hint" class="pixel-btn hint-btn">💡 pista</button>
+      <div id="feedback"></div>
+    </div>
+    <div id="hint-box" class="hidden"></div>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsuites@4/dist/jsuites.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4/dist/index.js"></script>
+<script src="js/game.js?v=15"></script>
+</body>
+</html>
