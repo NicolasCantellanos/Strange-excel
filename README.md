@@ -2,7 +2,7 @@
 
 Un juego web (novela visual, estética pixel art 16-bit) que enseña Excel desde cero a través de misiones ambientadas en el pueblo ficticio de **Vallenoche**, 1986.
 
-🎮 **[Jugar](https://nicolascantellanos.github.io/strange-excel/)**
+🎮 **[Jugar](https://nicolascantellanos.github.io/Strange-excel/)**
 
 ## De qué se trata
 
