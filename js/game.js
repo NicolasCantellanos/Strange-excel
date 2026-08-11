@@ -1,11 +1,27 @@
 /* ============================================================
    STRANGE EXCEL — Vallenoche, 1986
    Motor de misiones con progresión de menos a más,
-   basada en los módulos del curso de Excel:
-     Ep1: celdas y fórmulas básicas, SUMA        (Módulo 1)
-     Ep2: PROMEDIO, MAX, MIN                     (Módulo 1/8)
-     Ep3: CONTAR.SI, SUMAR.SI (condicionales)    (Módulo 2/8)
-     Futuro: BUSCARV (M4), tablas dinámicas (M5), Power Query/BI (M10)
+   basada en los módulos del curso de Excel (program-summary.pdf,
+   Desktop\CODERHOUSE — 11 módulos, 340 páginas):
+     Ep1:  celdas y fórmulas básicas, SUMA            (Módulo 1)
+     Ep2:  PROMEDIO, MAX, MIN                         (Módulo 1)
+     Ep3:  CONTAR.SI, SUMAR.SI (condicionales)        (Módulo 2)
+     Ep4:  BUSCARV                                    (Módulo 2)
+     Ep5:  tablas dinámicas a mano                    (Módulo 3)
+     Ep6:  proyecto integrador                        (Módulo 3)
+     Ep7:  SI / Y / O (decisiones)                    (Módulo 2)
+     Ep8:  MAYUSC/ESPACIOS/IZQUIERDA/DERECHA           (Módulo 2)
+     Ep9:  BUSCARX, AÑO/MES/DIA                        (Módulo 4)
+     Ep10: simulación de Power Query                  (Módulo 8)
+     Ep11: CONTAR.SI (duplicados), VALOR               (Módulo 1)
+     Ep12: BUSCARV + ESERROR (validación de datos)     (Módulo 1)
+     Ep13: ÍNDICE + COINCIDIR                          (Módulo 4)
+     Ep14: FIN.MES, DIA.LAB (fechas de negocio)        (Módulo 4)
+     Ep15: SI.ERROR (auditoría de fórmulas)            (Módulo 4)
+     Ep16: SI anidado (formato condicional simulado)   (Módulo 5)
+   Fuera de alcance del motor (narrativo solamente, como Power BI en
+   el Ep10): macros/VBA, Power Pivot/DAX, gráficos con slicers,
+   dashboards con IMPORTRANGE — necesitan la interfaz real de Excel.
    ============================================================ */
 
 /* ---------- 0. Funciones de Excel en español ----------
@@ -178,6 +194,85 @@ window.BUSCARV = function () {
     }
   }
   return "#N/D";
+};
+
+/* VALOR: convierte texto que "parece número" (a veces llega así al
+   importar datos) en un número de verdad, para poder sumarlo/operarlo. */
+window.VALOR = function (v) {
+  const n = parseFloat(String(v).trim().replace(",", "."));
+  return isNaN(n) ? "#VALOR!" : n;
+};
+
+/* ESERROR: para auditar fórmulas frágiles (Módulo 4) — permite detectar
+   si otra fórmula (típicamente BUSCARV/BUSCARX) devolvió un error. */
+window.ESERROR = (v) => String(v).trim().startsWith("#");
+
+/* COINCIDIR + ÍNDICE: como con BUSCARV/BUSCARX, el parser desparrama los
+   rangos — así que leen directo de mission.lookup en vez de confiar en
+   el argumento de rango que escribió el jugador. COINCIDIR devuelve la
+   POSICIÓN (1, 2, 3...) dentro de la columna de búsqueda; ÍNDICE devuelve
+   el valor en esa fila/columna. Combinadas hacen una búsqueda 2D. */
+window.COINCIDIR = function (valorBuscado) {
+  if (!spreadsheet || !mission || !mission.lookup) return "#N/A";
+  const L = mission.lookup;
+  const col = (mission.lookupX && mission.lookupX.searchCol) || 0;
+  const valor = String(valorBuscado).trim().toLowerCase();
+  for (let r = 0; r < L.rows; r++) {
+    const key = String(spreadsheet.getValueFromCoords(L.x0 + col, L.y0 + r, true) || "").trim().toLowerCase();
+    if (key === valor) return r + 1;
+  }
+  return "#N/A";
+};
+window.ÍNDICE = function () {
+  if (!spreadsheet || !mission || !mission.lookup) return "#N/A";
+  /* Igual que con BUSCARV: el parser desparrama la tabla (1er argumento)
+     en celdas sueltas cuando es un rango de varias celdas — así que fila
+     y columna, que van AL FINAL, quedan siempre como los últimos dos
+     argumentos recibidos, sin importar en cuántos se desparramó la tabla. */
+  const args = Array.prototype.slice.call(arguments);
+  const L = mission.lookup;
+  const f = parseInt(args[args.length - 2], 10);
+  const c = args.length >= 2 ? parseInt(args[args.length - 1], 10) : 1;
+  if (isNaN(f) || f < 1 || f > L.rows || isNaN(c) || c < 1 || c > L.cols) return "#N/A";
+  return spreadsheet.getValueFromCoords(L.x0 + (c - 1), L.y0 + (f - 1), true);
+};
+
+/* FIN.MES y DIA.LAB (Módulo 4 — fechas de negocio). Trabajan sobre el
+   mismo formato AAAA-MM-DD que AÑO/MES/DIA, usando fechas UTC para no
+   arrastrar líos de huso horario. */
+function _toUTCDate(v) {
+  const f = _fecha(v);
+  return f ? new Date(Date.UTC(f.y, f.mo - 1, f.d)) : null;
+}
+function _fromUTCDate(d) {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+window.FIN = {
+  MES: function (inicio, meses) {
+    const f = _fecha(inicio);
+    const m = parseInt(meses, 10);
+    if (!f || isNaN(m)) return "#VALOR!";
+    const total = f.y * 12 + (f.mo - 1) + m;
+    const y2 = Math.floor(total / 12), mo2 = total % 12;
+    const ultimoDia = new Date(Date.UTC(y2, mo2 + 1, 0)).getUTCDate();
+    return _fromUTCDate(new Date(Date.UTC(y2, mo2, ultimoDia)));
+  },
+};
+window.DIA.LAB = function (inicio, dias) {
+  let d = _toUTCDate(inicio);
+  let n = parseInt(dias, 10);
+  if (!d || isNaN(n)) return "#VALOR!";
+  const paso = n >= 0 ? 1 : -1;
+  n = Math.abs(n);
+  while (n > 0) {
+    d = new Date(d.getTime() + paso * 86400000);
+    const diaSemana = d.getUTCDay();
+    if (diaSemana !== 0 && diaSemana !== 6) n--;
+  }
+  return _fromUTCDate(d);
 };
 
 /* ---------- 1. Arte pixel ---------- */
@@ -1021,7 +1116,7 @@ const MISSIONS = [
       { speaker: "MARTA", text: "Eso que armaste es, en chiquito, lo que hace Power Query en el Excel de verdad: automatizar la limpieza de datos, paso por paso.", portrait: true },
       { speaker: "MARTA", text: "Lo que sigue ya no te lo puedo enseñar acá adentro: con estos datos limpios, se arman paneles — Business Intelligence — gráficos y números que se actualizan solos cada vez que cambia la planilla. Power BI, Excel real, todo conectado.", portrait: true },
       { speaker: "MARTA", text: "Bien. Llegaste hasta acá. El pueblo ya no tiene ningún número que no cierre... por ahora.", portrait: true, mood: "celebrating" },
-      { speaker: "", text: "FIN DE LA TEMPORADA 1 — GRACIAS POR JUGAR", portrait: false, bg: "town" },
+      { speaker: "", text: "FIN DEL PRIMER ARCO — pero Vallenoche todavía tiene más números raros escondidos...", portrait: false, bg: "town" },
     ],
     title: "EL ARCHIVO DEL SISTEMA VIEJO",
     query: {
@@ -1103,6 +1198,462 @@ const MISSIONS = [
         },
       ],
     },
+  },
+
+  {
+    id: 11,
+    name: "EP.11 — EL CATÁLOGO REPETIDO",
+    concepts: "CONTAR.SI (duplicados) · VALOR (texto→número)",
+    briefing: [
+      { speaker: "MARTA", text: "Pasé las fichas viejas del club de socios a la planilla a mano... pero me parece que anoté a algunos dos veces.", portrait: true, bg: "shop" },
+      { speaker: "MARTA", text: "Y esta columna de cantidades me la mandaron de otro sistema. Parecen números, pero la planilla se niega a sumarlos.", portrait: true },
+    ],
+    outro: [
+      { speaker: "MARTA", text: "Los repetidos quedaron marcados y ahora sí suma bien. Esto es EXACTAMENTE lo que hace 'Quitar duplicados' en el Excel de verdad — antes de borrar nada, te muestra CUÁLES están repetidos.", portrait: true, mood: "celebrating" },
+      { speaker: "MARTA", text: "Y ojo con los números que en realidad son texto: se ven idénticos a números normales, pero Excel no los suma hasta que los convertís de verdad.", portrait: true },
+    ],
+    title: "EL CATÁLOGO REPETIDO",
+    sheet: {
+      data: [
+        ["101", "Ana Ruiz", "", "12", ""],
+        ["102", "Luis Peña", "", "5", ""],
+        ["101", "Ana Ruiz", "", "12", ""],
+        ["103", "Sol Vega", "", "8", ""],
+        ["102", "Luis Peña", "", "5", ""],
+        ["", "", "", "TOTAL", ""],
+      ],
+      columns: [
+        { type: "text", title: "ID Socio", width: 90, readOnly: true },
+        { type: "text", title: "Nombre", width: 150, readOnly: true },
+        { type: "text", title: "¿Repetido?", width: 110 },
+        { type: "text", title: "Cantidad (texto)", width: 150, readOnly: true },
+        { type: "numeric", title: "Cantidad (núm.)", width: 140 },
+      ],
+    },
+    stages: [
+      {
+        instructions: `<span class="stage-label">MISIÓN — PARTE 1 de 2</span>
+          Completá <b>¿Repetido?</b>: "SI" si ese ID de Socio aparece más de una vez en toda la lista, "NO" si aparece una sola vez.<br>
+          <span style="color:var(--text-dim);">No hace falta mirar fila por fila a ojo — hay una función que cuenta cuántas veces aparece un valor en un rango.</span>`,
+        hints: [
+          "Fijate el ID de cada fila: ¿ese mismo número aparece en alguna OTRA fila de la columna A?",
+          "Podés CONTAR cuántas veces aparece un valor en un rango con CONTAR.SI. Si el resultado es mayor a 1, está repetido.",
+          'En ¿Repetido? de la fila 1 escribí: =SI(CONTAR.SI(A$1:A$5,A1)>1,"SI","NO") y repetí el patrón (el $ antes del número de fila evita que el rango se mueva al copiar).',
+        ],
+        check(s) {
+          const expected = ["SI", "SI", "SI", "NO", "SI"];
+          let ok = true, usedFn = true;
+          for (let r = 0; r < 5; r++) {
+            if (String(s.getValueFromCoords(2, r, true) || "").trim().toUpperCase() !== expected[r]) ok = false;
+            if (!rawAt(s, 2, r).toUpperCase().includes("CONTAR.SI(")) usedFn = false;
+          }
+          if (ok && !usedFn) return { ok: false, feedback: "Los resultados están bien, pero escritos a mano — usá CONTAR.SI para que la planilla los detecte sola. (¿Una 💡 PISTA?)" };
+          return { ok, feedback: ok ? "¡Encontraste todos los socios repetidos!" : "Todavía falta marcar bien los repetidos. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+      {
+        instructions: `<span class="success">✔ Repetidos marcados.</span>
+          <span class="stage-label" style="margin-top:10px;">MISIÓN — PARTE 2 de 2</span>
+          Completá <b>Cantidad (núm.)</b>: convertí el texto en número de verdad. Al final, escribí el <b>TOTAL</b> general.<br>
+          <span style="color:var(--text-dim);">La columna Cantidad (texto) SE VE como números, pero Excel los guarda como texto — por eso no se pueden sumar todavía.</span>`,
+        hints: [
+          "Esos valores parecen números pero están guardados como texto — por eso, si probás sumarlos directo, no funciona.",
+          "La función que convierte texto en número se llama VALOR.",
+          "En Cantidad (núm.) de la fila 1 escribí: =VALOR(D1) y repetí el patrón. Para el TOTAL, al final: =SUMA(E1:E5).",
+        ],
+        check(s) {
+          const expected = [12, 5, 12, 8, 5];
+          let ok = true, usedFn = true;
+          for (let r = 0; r < 5; r++) {
+            if (Math.abs(numAt(s, 4, r) - expected[r]) > 0.01 || isNaN(numAt(s, 4, r))) ok = false;
+            if (!rawAt(s, 4, r).toUpperCase().includes("VALOR(")) usedFn = false;
+          }
+          const total = Math.abs(numAt(s, 4, 5) - 42) < 0.01;
+          if (!total) return { ok: false, feedback: "Revisá la columna Cantidad (núm.) y el TOTAL final. (¿Necesitás una 💡 PISTA?)" };
+          if (ok && !usedFn) return { ok: false, feedback: "Los números están bien, pero escritos a mano — usá =VALOR() para convertir el texto de verdad. (¿Una 💡 PISTA?)" };
+          return { ok: ok && total, feedback: (ok && total) ? "¡Ahora sí suma! El texto se convirtió en números de verdad." : "Todavía hay algo mal en Cantidad (núm.) o en el TOTAL. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+    ],
+  },
+
+  {
+    id: 12,
+    name: "EP.12 — LA LISTA QUE NO ACEPTA CUALQUIER COSA",
+    concepts: "BUSCARV + ESERROR (validar datos)",
+    briefing: [
+      { speaker: "MARTA", text: "Alguien está cargando pedidos con códigos de producto que no existen en el catálogo. No sé si es un error de tipeo o alguien probando suerte.", portrait: true, mood: "worried" },
+      { speaker: "MARTA", text: "Necesito una columna que me diga, pedido por pedido, si el código existe de verdad en el catálogo o no.", portrait: true },
+    ],
+    outro: [
+      { speaker: "MARTA", text: "Ahora ningún código falso pasa desapercibido. Esto es la idea de fondo detrás de la Validación de Datos: una lista desplegable en Excel real hace justamente esto — no deja cargar algo que no está en el catálogo.", portrait: true, mood: "celebrating" },
+      { speaker: "MARTA", text: "Y de paso contaste cuántos pedidos truchos había. Contar con condición otra vez — ya la tenés bien aprendida.", portrait: true },
+    ],
+    title: "LA LISTA QUE NO ACEPTA CUALQUIER COSA",
+    lookup: { x0: 0, y0: 0, cols: 3, rows: 6 },
+    sheet: {
+      data: [
+        ["CAS-01", "Blondie - Parallel Lines", 800],
+        ["VIN-02", "Bowie - Let's Dance", 1500],
+        ["CAS-03", "Queen - Greatest Hits", 800],
+        ["VIN-04", "Talking Heads - 77", 2000],
+        ["CAS-05", "Charly - Clics Modernos", 900],
+        ["VIN-06", "Spinetta - Artaud", 2200],
+        ["", "", ""],
+        ["CAS-01", "", ""],
+        ["VIN-99", "", ""],
+        ["CAS-03", "", ""],
+        ["CAS-1", "", ""],
+        ["VIN-04", "", ""],
+        ["", "", ""],
+        ["¿Cuántos códigos inválidos hay en total?", "", ""],
+      ],
+      columns: [
+        { type: "text", title: "Código", width: 150, readOnly: true },
+        { type: "text", title: "Producto / ¿Válido?", width: 230 },
+        { type: "numeric", title: "Precio", width: 110 },
+      ],
+    },
+    protect: [
+      { x: 1, y: 0, v: "Blondie - Parallel Lines" }, { x: 2, y: 0, v: 800 },
+      { x: 1, y: 1, v: "Bowie - Let's Dance" }, { x: 2, y: 1, v: 1500 },
+      { x: 1, y: 2, v: "Queen - Greatest Hits" }, { x: 2, y: 2, v: 800 },
+      { x: 1, y: 3, v: "Talking Heads - 77" }, { x: 2, y: 3, v: 2000 },
+      { x: 1, y: 4, v: "Charly - Clics Modernos" }, { x: 2, y: 4, v: 900 },
+      { x: 1, y: 5, v: "Spinetta - Artaud" }, { x: 2, y: 5, v: 2200 },
+    ],
+    stages: [
+      {
+        instructions: `<span class="stage-label">MISIÓN — PARTE 1 de 2</span>
+          Filas 8 a 12: completá la columna con <b>"OK"</b> si el código del pedido existe en el catálogo (A1:C6), o <b>"CÓDIGO INVÁLIDO"</b> si no existe.<br>
+          <span style="color:var(--text-dim);">Pensá: ¿qué pasa cuando BUSCARV no encuentra un código? Devuelve un error. Hay que detectar ESE error.</span>`,
+        hints: [
+          "Si el código no está en el catálogo, BUSCARV va a devolver un error (#N/D). Necesitás detectar CUÁNDO pasa eso.",
+          "La función ESERROR te dice si algo es un error (VERDADERO/FALSO). Combinala con SI: =SI(ESERROR(BUSCARV(...)),\"CÓDIGO INVÁLIDO\",\"OK\")",
+          'En la fila 8 escribí: =SI(ESERROR(BUSCARV(A8,A1:C6,2,FALSO)),"CÓDIGO INVÁLIDO","OK") y repetí el patrón en las filas 9 a 12.',
+        ],
+        check(s) {
+          const expected = ["OK", "CÓDIGO INVÁLIDO", "OK", "CÓDIGO INVÁLIDO", "OK"];
+          let ok = true, usedFn = true;
+          for (let r = 0; r < 5; r++) {
+            if (String(s.getValueFromCoords(1, 7 + r, true) || "").trim().toUpperCase() !== expected[r]) ok = false;
+            const raw = rawAt(s, 1, 7 + r).toUpperCase();
+            if (!raw.includes("BUSCARV(") || !raw.includes("ESERROR(")) usedFn = false;
+          }
+          if (ok && !usedFn) return { ok: false, feedback: "Los resultados están bien, pero probá combinando BUSCARV con ESERROR para que sea automático. (¿Una 💡 PISTA?)" };
+          return { ok, feedback: ok ? "¡Encontraste los códigos falsos!" : "Todavía hay algo mal en la validación. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+      {
+        instructions: `<span class="success">✔ Códigos validados.</span>
+          <span class="stage-label" style="margin-top:10px;">MISIÓN — PARTE 2 de 2</span>
+          En la fila 14, respondé: <b>¿cuántos códigos inválidos hay en total?</b><br>
+          <span style="color:var(--text-dim);">Ya tenés la columna con "CÓDIGO INVÁLIDO" marcado. Contar con una condición ya lo sabés hacer.</span>`,
+        hints: [
+          "Tenés que contar cuántas veces aparece el texto «CÓDIGO INVÁLIDO» en la columna B, filas 8 a 12.",
+          "Es la misma función que usaste con Cassettes contra Vinilos: CONTAR.SI.",
+          'En la fila 14 escribí: =CONTAR.SI(B8:B12,"CÓDIGO INVÁLIDO")',
+        ],
+        check(s) {
+          const ok = Math.abs(numAt(s, 1, 13) - 2) < 0.01;
+          return { ok, feedback: ok ? "¡2 códigos inválidos detectados!" : "Ese no es el total de códigos inválidos. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+    ],
+  },
+
+  {
+    id: 13,
+    name: "EP.13 — COORDENADAS PERDIDAS",
+    concepts: "ÍNDICE + COINCIDIR (búsqueda flexible)",
+    briefing: [
+      { speaker: "MARTA", text: "Necesito saber en qué POSICIÓN de la lista está un producto — no solo su precio. Y después, poder pedirle cualquier dato de esa misma fila.", portrait: true },
+      { speaker: "MARTA", text: "BUSCARV te da UN dato fijo. Lo que quiero es más flexible: encontrar DÓNDE está algo, y a partir de ahí, sacar lo que necesite.", portrait: true },
+    ],
+    outro: [
+      { speaker: "MARTA", text: "Encontraste la posición y después el dato — como dos pasos separados que se combinan. Eso es más flexible que BUSCARV: una vez que sabés DÓNDE está algo, podés pedirle cualquier columna de esa fila.", portrait: true, mood: "celebrating" },
+      { speaker: "MARTA", text: "COINCIDIR encuentra la posición. ÍNDICE devuelve el dato en esa posición. Juntas hacen una búsqueda mucho más flexible que BUSCARV solo.", portrait: true },
+    ],
+    title: "COORDENADAS PERDIDAS",
+    lookup: { x0: 0, y0: 0, cols: 3, rows: 6 },
+    lookupX: { searchCol: 0 },
+    sheet: {
+      data: [
+        ["CAS-01", "Blondie - Parallel Lines", 8],
+        ["VIN-02", "Bowie - Let's Dance", 3],
+        ["CAS-03", "Queen - Greatest Hits", 12],
+        ["VIN-04", "Talking Heads - 77", 1],
+        ["CAS-05", "Charly - Clics Modernos", 6],
+        ["VIN-06", "Spinetta - Artaud", 4],
+        ["", "", ""],
+        ["CÓDIGO A BUSCAR:", "VIN-04", ""],
+        ["¿En qué posición (fila) está?", "", ""],
+        ["¿Qué producto es?", "", ""],
+      ],
+      columns: [
+        { type: "text", title: "Código", width: 150, readOnly: true },
+        { type: "text", title: "Producto", width: 220 },
+        { type: "numeric", title: "Stock / Posición", width: 140 },
+      ],
+    },
+    protect: [
+      { x: 1, y: 0, v: "Blondie - Parallel Lines" }, { x: 2, y: 0, v: 8 },
+      { x: 1, y: 1, v: "Bowie - Let's Dance" }, { x: 2, y: 1, v: 3 },
+      { x: 1, y: 2, v: "Queen - Greatest Hits" }, { x: 2, y: 2, v: 12 },
+      { x: 1, y: 3, v: "Talking Heads - 77" }, { x: 2, y: 3, v: 1 },
+      { x: 1, y: 4, v: "Charly - Clics Modernos" }, { x: 2, y: 4, v: 6 },
+      { x: 1, y: 5, v: "Spinetta - Artaud" }, { x: 2, y: 5, v: 4 },
+      { x: 1, y: 7, v: "VIN-04" },
+    ],
+    stages: [
+      {
+        instructions: `<span class="stage-label">MISIÓN — PARTE 1 de 2</span>
+          El código a buscar está en <b>B8</b>. En <b>C9</b>, encontrá en qué FILA de la tabla (A1:A6) está ese código.<br>
+          <span style="color:var(--text-dim);">No queremos el producto todavía — solo la POSICIÓN (1, 2, 3...) dentro de la columna de códigos.</span>`,
+        hints: [
+          "No busques el producto todavía. Primero necesitás saber en qué fila de la columna A está el código de B8.",
+          "La función que encuentra la POSICIÓN de un valor dentro de un rango se llama COINCIDIR: =COINCIDIR(valor_buscado, rango, 0)",
+          "En C9 escribí: =COINCIDIR(B8,A1:A6,0)",
+        ],
+        check(s) {
+          const ok = Math.abs(numAt(s, 2, 8) - 4) < 0.01;
+          const raw = rawAt(s, 2, 8).toUpperCase();
+          if (ok && !raw.includes("COINCIDIR(")) {
+            return { ok: false, feedback: "La posición es esa, ¡pero escrita a mano! Usá COINCIDIR para que la encuentre sola. (¿Una 💡 PISTA?)" };
+          }
+          return { ok, feedback: ok ? "¡Está en la fila 4! COINCIDIR encontró la posición." : "Esa no es la posición del código VIN-04. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+      {
+        instructions: `<span class="success">✔ Posición encontrada: fila 4.</span>
+          <span class="stage-label" style="margin-top:10px;">MISIÓN — PARTE 2 de 2</span>
+          En <b>B10</b>, conseguí el nombre del producto combinando ÍNDICE con COINCIDIR — en una sola fórmula.<br>
+          <span style="color:var(--text-dim);">ÍNDICE devuelve el dato de una posición. Metele adentro la fórmula de COINCIDIR que ya armaste, en vez del número fijo.</span>`,
+        hints: [
+          "ÍNDICE necesita una tabla, una fila y una columna: =ÍNDICE(tabla, fila, columna). Como fila, en vez de poner el número 4 a mano, metele la fórmula de COINCIDIR.",
+          "La columna del Producto es la 2 dentro de la tabla A1:C6.",
+          "En B10 escribí: =ÍNDICE(A1:C6,COINCIDIR(B8,A1:A6,0),2)",
+        ],
+        check(s) {
+          const val = String(s.getValueFromCoords(1, 9, true) || "").toLowerCase();
+          const raw = rawAt(s, 1, 9).toUpperCase();
+          const rightValue = val.includes("talking");
+          if (rightValue && (!raw.includes("ÍNDICE(") || !raw.includes("COINCIDIR("))) {
+            return { ok: false, feedback: "¡Ese es el producto! Pero probá combinando ÍNDICE y COINCIDIR en una sola fórmula, en vez de escribirlo a mano. (¿Una 💡 PISTA?)" };
+          }
+          return { ok: rightValue, feedback: rightValue ? "¡«Talking Heads - 77»! ÍNDICE + COINCIDIR encontraron el dato." : "Ese no es el producto del código VIN-04. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+    ],
+  },
+
+  {
+    id: 14,
+    name: "EP.14 — EL CALENDARIO DEL DEPÓSITO",
+    concepts: "FIN.MES · DIA.LAB (fechas de negocio)",
+    briefing: [
+      { speaker: "MARTA", text: "El contador quiere que cada factura venza a fin del mes siguiente a la compra. Siempre. Aunque el mes tenga 28, 30 o 31 días.", portrait: true },
+      { speaker: "MARTA", text: "Y el depósito necesita saber la fecha de entrega: 5 días HÁBILES después de la compra — sin contar sábados ni domingos.", portrait: true },
+    ],
+    outro: [
+      { speaker: "MARTA", text: "Los vencimientos ya no se calculan contando con los dedos en un calendario. FIN.MES y DIA.LAB hacen ese trabajo solas, mes tras mes.", portrait: true, mood: "celebrating" },
+      { speaker: "MARTA", text: "Esto es justo lo que usan las áreas de facturación y logística todo el tiempo: vencimientos de fin de mes y plazos de entrega en días hábiles.", portrait: true },
+    ],
+    title: "EL CALENDARIO DEL DEPÓSITO",
+    sheet: {
+      data: [
+        ["2024-06-05", "", ""],
+        ["2024-06-18", "", ""],
+        ["2024-07-02", "", ""],
+        ["2024-07-25", "", ""],
+        ["2024-08-10", "", ""],
+      ],
+      columns: [
+        { type: "text", title: "Fecha de compra", width: 130, readOnly: true },
+        { type: "text", title: "Vence factura (fin del mes sig.)", width: 220 },
+        { type: "text", title: "Entrega estimada (+5 días hábiles)", width: 230 },
+      ],
+    },
+    stages: [
+      {
+        instructions: `<span class="stage-label">MISIÓN — PARTE 1 de 2</span>
+          Completá <b>Vence factura</b>: el último día del mes SIGUIENTE a la fecha de compra.<br>
+          <span style="color:var(--text-dim);">Las fechas están en formato AAAA-MM-DD. No hace falta contar los días del mes a mano — hay una función que devuelve directamente el último día.</span>`,
+        hints: [
+          "No cuentes los días del mes a mano (28, 30, 31...). Hay una función que te da directamente el ÚLTIMO día de un mes.",
+          "Se llama FIN.MES: =FIN.MES(fecha_inicial, meses_a_sumar). Como querés el mes SIGUIENTE, el segundo argumento es 1.",
+          "En Vence factura de la fila 1 escribí: =FIN.MES(A1,1) y repetí el patrón.",
+        ],
+        check(s) {
+          const expected = ["2024-07-31", "2024-07-31", "2024-08-31", "2024-08-31", "2024-09-30"];
+          let ok = true, usedFn = true;
+          for (let r = 0; r < 5; r++) {
+            if (String(s.getValueFromCoords(1, r, true) || "").trim() !== expected[r]) ok = false;
+            if (!rawAt(s, 1, r).toUpperCase().includes("FIN.MES(")) usedFn = false;
+          }
+          if (ok && !usedFn) return { ok: false, feedback: "Las fechas están bien, pero escritas a mano — usá FIN.MES para que se calculen solas. (¿Una 💡 PISTA?)" };
+          return { ok, feedback: ok ? "¡Vencimientos calculados!" : "Todavía hay alguna fecha de vencimiento mal. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+      {
+        instructions: `<span class="success">✔ Vencimientos listos.</span>
+          <span class="stage-label" style="margin-top:10px;">MISIÓN — PARTE 2 de 2</span>
+          Completá <b>Entrega estimada</b>: 5 días HÁBILES después de la compra (sin contar sábados ni domingos).<br>
+          <span style="color:var(--text-dim);">Sumar 5 al día del mes directamente saltearía fines de semana de largo — hace falta una función que los tenga en cuenta.</span>`,
+        hints: [
+          "Sumar 5 días de corrido incluiría algún sábado o domingo. Necesitás una función que SALTEE los fines de semana.",
+          "Se llama DIA.LAB: =DIA.LAB(fecha_inicial, días_hábiles_a_sumar).",
+          "En Entrega estimada de la fila 1 escribí: =DIA.LAB(A1,5) y repetí el patrón.",
+        ],
+        check(s) {
+          const expected = ["2024-06-12", "2024-06-25", "2024-07-09", "2024-08-01", "2024-08-16"];
+          let ok = true, usedFn = true;
+          for (let r = 0; r < 5; r++) {
+            if (String(s.getValueFromCoords(2, r, true) || "").trim() !== expected[r]) ok = false;
+            if (!rawAt(s, 2, r).toUpperCase().includes("DIA.LAB(")) usedFn = false;
+          }
+          if (ok && !usedFn) return { ok: false, feedback: "Las fechas están bien, pero escritas a mano — usá DIA.LAB para saltear los fines de semana sola. (¿Una 💡 PISTA?)" };
+          return { ok, feedback: ok ? "¡Entregas calculadas saltando fines de semana!" : "Todavía hay alguna fecha de entrega mal. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+    ],
+  },
+
+  {
+    id: 15,
+    name: "EP.15 — LOS NÚMEROS QUE NO EXPLOTAN",
+    concepts: "SI.ERROR (auditoría de fórmulas)",
+    briefing: [
+      { speaker: "MARTA", text: "El reporte del mes se rompe cada vez que aparece un código de un producto discontinuado — tira #N/D y ahí se corta todo.", portrait: true, mood: "worried" },
+      { speaker: "MARTA", text: "No puedo controlar qué códigos van a llegar. Lo que sí puedo hacer es que, si uno no existe más, la fórmula lo diga bonito en vez de romperse.", portrait: true },
+    ],
+    outro: [
+      { speaker: "MARTA", text: "El reporte ya no se rompe. Ahora, en vez de un error feo, dice exactamente qué pasó — y el resto de la planilla sigue funcionando.", portrait: true, mood: "celebrating" },
+      { speaker: "MARTA", text: "Esto es auditar una fórmula: anticiparte a que algo puede fallar, y decidir vos qué mostrar en ese caso. Un reporte profesional nunca debería mostrar un error a un cliente.", portrait: true },
+    ],
+    title: "LOS NÚMEROS QUE NO EXPLOTAN",
+    lookup: { x0: 0, y0: 0, cols: 3, rows: 6 },
+    sheet: {
+      data: [
+        ["CAS-01", "Blondie - Parallel Lines", 800],
+        ["VIN-02", "Bowie - Let's Dance", 1500],
+        ["CAS-03", "Queen - Greatest Hits", 800],
+        ["VIN-04", "Talking Heads - 77", 2000],
+        ["CAS-05", "Charly - Clics Modernos", 900],
+        ["VIN-06", "Spinetta - Artaud", 2200],
+        ["", "", ""],
+        ["CAS-01", "", ""],
+        ["VIN-99", "", ""],
+        ["CAS-03", "", ""],
+        ["VIN-50", "", ""],
+        ["VIN-04", "", ""],
+        ["", "", ""],
+        ["¿Cuántos códigos discontinuados hay en total?", "", ""],
+      ],
+      columns: [
+        { type: "text", title: "Código", width: 150, readOnly: true },
+        { type: "text", title: "Producto", width: 240 },
+        { type: "numeric", title: "Precio", width: 110 },
+      ],
+    },
+    protect: [
+      { x: 1, y: 0, v: "Blondie - Parallel Lines" }, { x: 2, y: 0, v: 800 },
+      { x: 1, y: 1, v: "Bowie - Let's Dance" }, { x: 2, y: 1, v: 1500 },
+      { x: 1, y: 2, v: "Queen - Greatest Hits" }, { x: 2, y: 2, v: 800 },
+      { x: 1, y: 3, v: "Talking Heads - 77" }, { x: 2, y: 3, v: 2000 },
+      { x: 1, y: 4, v: "Charly - Clics Modernos" }, { x: 2, y: 4, v: 900 },
+      { x: 1, y: 5, v: "Spinetta - Artaud" }, { x: 2, y: 5, v: 2200 },
+    ],
+    stages: [
+      {
+        instructions: `<span class="stage-label">MISIÓN — PARTE 1 de 2</span>
+          Filas 8 a 12: buscá el producto de cada código. Si el código ya no existe en el catálogo, mostrá <b>"PRODUCTO DISCONTINUADO"</b> en vez de un error.<br>
+          <span style="color:var(--text-dim);">Ya sabés que BUSCARV rompe con #N/D si no encuentra algo. Ahora hay que ATRAPAR ese error y reemplazarlo por un mensaje.</span>`,
+        hints: [
+          "Cuando BUSCARV no encuentra el código, devuelve un error. Necesitás una función que ENVUELVA a BUSCARV y reemplace ese error por otra cosa.",
+          "Se llama SI.ERROR: =SI.ERROR(fórmula_que_puede_fallar, qué_mostrar_si_falla).",
+          'En la fila 8 escribí: =SI.ERROR(BUSCARV(A8,A1:C6,2,FALSO),"PRODUCTO DISCONTINUADO") y repetí el patrón en las filas 9 a 12.',
+        ],
+        check(s) {
+          const expected = ["Blondie - Parallel Lines", "PRODUCTO DISCONTINUADO", "Queen - Greatest Hits", "PRODUCTO DISCONTINUADO", "Talking Heads - 77"];
+          let ok = true, usedFn = true;
+          for (let r = 0; r < 5; r++) {
+            if (String(s.getValueFromCoords(1, 7 + r, true) || "").trim().toUpperCase() !== expected[r].toUpperCase()) ok = false;
+            const raw = rawAt(s, 1, 7 + r).toUpperCase();
+            if (!raw.includes("SI.ERROR(") || !raw.includes("BUSCARV(")) usedFn = false;
+          }
+          if (ok && !usedFn) return { ok: false, feedback: "Los resultados están bien, pero probá envolviendo BUSCARV con SI.ERROR para que no se rompa sola. (¿Una 💡 PISTA?)" };
+          return { ok, feedback: ok ? "¡El reporte ya no se rompe con códigos discontinuados!" : "Todavía hay algo mal en alguna fila. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+      {
+        instructions: `<span class="success">✔ Fórmulas a prueba de errores.</span>
+          <span class="stage-label" style="margin-top:10px;">MISIÓN — PARTE 2 de 2</span>
+          En la fila 14, respondé: <b>¿cuántos códigos discontinuados hay en total?</b>`,
+        hints: [
+          "Tenés que contar cuántas veces aparece el texto «PRODUCTO DISCONTINUADO» en la columna B, filas 8 a 12.",
+          "Es la misma función de siempre para contar con una condición: CONTAR.SI.",
+          'En la fila 14 escribí: =CONTAR.SI(B8:B12,"PRODUCTO DISCONTINUADO")',
+        ],
+        check(s) {
+          const ok = Math.abs(numAt(s, 1, 13) - 2) < 0.01;
+          return { ok, feedback: ok ? "¡2 productos discontinuados detectados!" : "Ese no es el total de productos discontinuados. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+    ],
+  },
+
+  {
+    id: 16,
+    name: "EP.16 — EL SEMÁFORO AUTOMÁTICO",
+    concepts: "SI anidado (formato condicional)",
+    briefing: [
+      { speaker: "MARTA", text: "Quiero mirar el depósito de un vistazo, sin leer número por número: rojo si no queda nada, amarillo si queda poco, verde si está bien.", portrait: true },
+      { speaker: "MARTA", text: "En el Excel de verdad esto se pinta con Formato Condicional. Acá adentro no puedo pintar celdas... pero sí puedo hacer que la fórmula decida el color sola.", portrait: true },
+    ],
+    outro: [
+      { speaker: "MARTA", text: "De un vistazo ya sé qué reponer. Esta es la lógica exacta detrás del Formato Condicional: una regla que mira un valor y decide cómo mostrarlo — acá con un semáforo, en Excel real con un color de fondo.", portrait: true, mood: "celebrating" },
+      { speaker: "MARTA", text: "Un SI adentro de otro SI te deja decidir entre MÁS de dos resultados. Cuantas más condiciones necesites distinguir, más SI podés anidar.", portrait: true },
+    ],
+    title: "EL SEMÁFORO AUTOMÁTICO",
+    sheet: {
+      data: [
+        ["Cassette - Blondie", 15, ""],
+        ["Vinilo - Bowie", 3, ""],
+        ["CD - Queen", 0, ""],
+        ["Vinilo - Talking Heads", 1, ""],
+        ["Cassette - Charly", 20, ""],
+      ],
+      columns: [
+        { type: "text", title: "Producto", width: 190, readOnly: true },
+        { type: "numeric", title: "Stock", width: 90, readOnly: true },
+        { type: "text", title: "Semáforo", width: 170 },
+      ],
+    },
+    stages: [
+      {
+        instructions: `<span class="stage-label">MISIÓN</span>
+          Completá <b>Semáforo</b> para cada producto: <b>"🔴 SIN STOCK"</b> si el Stock es 0, <b>"🟡 STOCK BAJO"</b> si es 3 o menos (pero no 0), o <b>"🟢 OK"</b> si es más que eso.<br>
+          <span style="color:var(--text-dim);">Son TRES resultados posibles, no dos — vas a necesitar un SI adentro de otro SI.</span>`,
+        hints: [
+          'Con un solo SI alcanza para elegir entre 2 resultados. Acá necesitás elegir entre 3 — hace falta un SI DENTRO del resultado "falso" de otro SI.',
+          "Primero preguntá si el Stock es 0. Si no lo es, ahí adentro (en el 'si no') volvé a preguntar con OTRO SI si es 3 o menos.",
+          'En Semáforo de la fila 1 escribí: =SI(B1=0,"🔴 SIN STOCK",SI(B1<=3,"🟡 STOCK BAJO","🟢 OK")) y repetí el patrón.',
+        ],
+        check(s) {
+          const expected = ["🟢 OK", "🟡 STOCK BAJO", "🔴 SIN STOCK", "🟡 STOCK BAJO", "🟢 OK"];
+          let ok = true, usedFn = true;
+          for (let r = 0; r < 5; r++) {
+            if (String(s.getValueFromCoords(2, r, true) || "").trim() !== expected[r]) ok = false;
+            const raw = rawAt(s, 2, r).toUpperCase();
+            const count = (raw.match(/SI\(/g) || []).length;
+            if (count < 2) usedFn = false;
+          }
+          if (ok && !usedFn) return { ok: false, feedback: "Los resultados están bien, pero probá anidando un SI dentro de otro en vez de escribirlo a mano. (¿Una 💡 PISTA?)" };
+          return { ok, feedback: ok ? "¡Semáforo automático funcionando!" : "Todavía hay algún producto con el semáforo mal. (¿Necesitás una 💡 PISTA?)" };
+        },
+      },
+    ],
   },
 ];
 
