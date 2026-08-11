@@ -8,7 +8,7 @@ Un juego web (novela visual, estética pixel art 16-bit) que enseña Excel desde
 
 Cada episodio plantea un problema con una historia y lo resuelve dentro de una hoja de cálculo real, integrada en el juego. El jugador escribe fórmulas de verdad — el juego valida el resultado, no una respuesta de memoria, y da pistas progresivas si se traba.
 
-## Contenido (9 episodios)
+## Contenido (16 episodios)
 
 | Episodio | Enseña |
 |---|---|
@@ -22,6 +22,13 @@ Cada episodio plantea un problema con una historia y lo resuelve dentro de una h
 | Ep.7 | `SI`, `Y`, `O` (funciones lógicas) |
 | Ep.8 | `MAYUSC`, `ESPACIOS`, `IZQUIERDA`, `DERECHA`, `CONCATENAR` |
 | Ep.9 | `BUSCARX`, `AÑO`/`MES`/`DIA` |
+| Ep.10 | Simulación de Power Query (limpieza de datos en pasos) |
+| Ep.11 | `CONTAR.SI` (detectar duplicados), `VALOR` (texto a número) |
+| Ep.12 | `BUSCARV` + `ESERROR` (validación de datos) |
+| Ep.13 | `ÍNDICE` + `COINCIDIR` (búsqueda flexible) |
+| Ep.14 | `FIN.MES`, `DIA.LAB` (fechas de negocio) |
+| Ep.15 | `SI.ERROR` (auditoría de fórmulas) |
+| Ep.16 | `SI` anidado (formato condicional simulado) |
 
 ## Cómo correrlo localmente
 
