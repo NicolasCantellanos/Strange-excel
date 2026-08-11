@@ -50,7 +50,22 @@ html,body{
 
 /* ---------- Mapa de misiones ---------- */
 
-#map-screen{ padding-top:48px; }
+#map-screen{ padding-top:48px; position:relative; overflow:hidden; }
+
+#map-backdrop{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  opacity:0.55;
+  pointer-events:none;
+}
+#map-backdrop svg{
+  width:100%;
+  height:220px;
+  display:block;
+  image-rendering:pixelated;
+}
+#map-title, #map-subtitle, #map-missions{ position:relative; z-index:1; }
 
 #map-title{
   font-family:'Press Start 2P', monospace;
@@ -131,10 +146,15 @@ html,body{
 #scene-backdrop{
   position:absolute;
   inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
   z-index:0;
+  overflow:hidden;
+}
+#scene-backdrop svg{
+  width:100%;
+  height:100%;
+  display:block;
+  image-rendering:pixelated;
+  opacity:0.8;
 }
 
 #portrait-wrap{

@@ -219,16 +219,82 @@ const MARTA_ROWS = [
   "................",
 ];
 
+/* Variante "preocupada": mismas filas, cejas fruncidas agregadas a la altura de los ojos */
+const MARTA_ROWS_WORRIED = MARTA_ROWS.map((row, i) =>
+  i === 5 ? "..HSSBBSSBBSSH.." : row
+);
+
 const MARTA_PALETTE = {
   H: "#3a2350", S: "#e8c39e", E: "#141414",
-  O: "#7a4a2c", R: "#b5293b", C: "#7c1a28",
+  O: "#7a4a2c", R: "#b5293b", C: "#7c1a28", B: "#8a1f2f",
 };
 
-function showPortrait() {
-  document.getElementById("portrait").innerHTML = pixelSVG(MARTA_ROWS, MARTA_PALETTE, 10);
+function showPortrait(mood) {
+  const rows = mood === "worried" ? MARTA_ROWS_WORRIED : MARTA_ROWS;
+  document.getElementById("portrait").innerHTML = pixelSVG(rows, MARTA_PALETTE, 10);
 }
 function hidePortrait() {
   document.getElementById("portrait").innerHTML = "";
+}
+
+/* ---------- 1b. Escenarios de fondo (generados por código) ---------- */
+
+function svgWrap(w, h, inner, cls) {
+  return `<svg class="${cls || ""}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">${inner}</svg>`;
+}
+
+function buildTownBackdrop() {
+  const w = 480, h = 160;
+  const buildings = [
+    { x: 0, w: 60, h: 70 }, { x: 55, w: 40, h: 100 }, { x: 90, w: 70, h: 60 },
+    { x: 155, w: 50, h: 90 }, { x: 200, w: 80, h: 50 }, { x: 275, w: 45, h: 110 },
+    { x: 315, w: 60, h: 75 }, { x: 370, w: 50, h: 95 }, { x: 415, w: 70, h: 65 },
+  ];
+  let s = buildings.map((b) => `<rect x="${b.x}" y="${h - b.h}" width="${b.w}" height="${b.h}" fill="#150a22"/>`).join("");
+  /* la ventana iluminada de la tienda de discos, en el segundo edificio */
+  s += `<rect x="70" y="${h - 70}" width="10" height="12" fill="#ffcc4d">
+      <animate attributeName="opacity" values="1;0.6;1" dur="4s" repeatCount="indefinite"/>
+    </rect>`;
+  return svgWrap(w, h, s, "backdrop-town");
+}
+
+function buildShopBackdrop() {
+  const w = 480, h = 160;
+  const colors = ["#b5293b", "#37f0d8", "#ffcc4d", "#7c1a28", "#3a2350"];
+  let s = `<rect x="0" y="0" width="${w}" height="${h}" fill="#2a1408"/>`;
+  [40, 75, 110].forEach((y) => { s += `<rect x="20" y="${y}" width="440" height="6" fill="#5c2f12"/>`; });
+  [24, 59, 94].forEach((y, row) => {
+    for (let i = 0; i < 18; i++) {
+      s += `<rect x="${24 + i * 24}" y="${y}" width="14" height="14" fill="${colors[(i + row) % colors.length]}"/>`;
+    }
+  });
+  s += `<rect x="0" y="${h - 32}" width="${w}" height="4" fill="#5c2f12"/>`;
+  s += `<rect x="0" y="${h - 28}" width="${w}" height="28" fill="#3a1c0c"/>`;
+  return svgWrap(w, h, s, "backdrop-shop");
+}
+
+function buildBasementBackdrop() {
+  const w = 480, h = 160;
+  const cx = w / 2;
+  let s = `<rect x="0" y="0" width="${w}" height="${h}" fill="#0a0612"/>`;
+  s += `<rect x="0" y="20" width="${w}" height="6" fill="#1a1024"/>`;
+  s += `<rect x="0" y="130" width="${w}" height="6" fill="#1a1024"/>`;
+  [60, 180, 300, 420].forEach((x) => { s += `<rect x="${x}" y="20" width="8" height="116" fill="#241834"/>`; });
+  s += `<rect x="${cx - 1}" y="26" width="2" height="30" fill="#3a2350"/>`;
+  s += `<circle cx="${cx}" cy="60" r="24" fill="#ffcc4d" opacity="0.15">
+      <animate attributeName="opacity" values="0.15;0.02;0.15;0.15;0.05;0.15" dur="2.6s" repeatCount="indefinite"/>
+    </circle>`;
+  s += `<circle cx="${cx}" cy="60" r="10" fill="#ffcc4d">
+      <animate attributeName="opacity" values="1;0.15;1;1;0.3;1" dur="2.6s" repeatCount="indefinite"/>
+    </circle>`;
+  return svgWrap(w, h, s, "backdrop-basement");
+}
+
+const BACKDROPS = { town: buildTownBackdrop, shop: buildShopBackdrop, basement: buildBasementBackdrop };
+
+function setBackdrop(name) {
+  const el2 = document.getElementById("scene-backdrop");
+  el2.innerHTML = name && BACKDROPS[name] ? BACKDROPS[name]() : "";
 }
 
 /* ---------- 2. Progreso ---------- */
@@ -257,10 +323,10 @@ const MISSIONS = [
     concepts: "Celdas · fórmulas · multiplicar · SUMA",
     offerTutorial: true,
     intro: [
-      { speaker: "", text: "Vallenoche. Un pueblo tranquilo... casi siempre.", portrait: false },
-      { speaker: "", text: "En la trastienda de «Discos Cassette Vallenoche» hay una computadora vieja que nadie enciende de día.", portrait: false },
+      { speaker: "", text: "Vallenoche. Un pueblo tranquilo... casi siempre.", portrait: false, bg: "town" },
+      { speaker: "", text: "En la trastienda de «Discos Cassette Vallenoche» hay una computadora vieja que nadie enciende de día.", portrait: false, bg: "shop" },
       { speaker: "MARTA", text: "¡Por fin llegás! Necesito ayuda con esto antes de que cierre la tienda.", portrait: true },
-      { speaker: "MARTA", text: "Cada mes hago las cuentas a mano... pero esta vez algo no cierra. Y cuando el total no cierra, la luz del sótano empieza a parpadear.", portrait: true },
+      { speaker: "MARTA", text: "Cada mes hago las cuentas a mano... pero esta vez algo no cierra. Y cuando el total no cierra, la luz del sótano empieza a parpadear.", portrait: true, mood: "worried", bg: "basement" },
     ],
     briefing: [
       { speaker: "MARTA", text: "Acá está la planilla de ventas. Cada FILA es un día — un registro. Cada COLUMNA es un dato de esa venta: día, producto, cantidad, precio.", portrait: true },
@@ -268,7 +334,7 @@ const MISSIONS = [
       { speaker: "MARTA", text: "Si te trabás, apretá el botón 💡 PISTA. Para eso está.", portrait: true },
     ],
     outro: [
-      { speaker: "MARTA", text: "¡Cerró perfecto! Mirá — la luz del sótano dejó de parpadear.", portrait: true },
+      { speaker: "MARTA", text: "¡Cerró perfecto! Mirá — la luz del sótano dejó de parpadear.", portrait: true, bg: "basement" },
       { speaker: "MARTA", text: "Pero esto era solo el principio. Volvé mañana... los números de este pueblo esconden más secretos.", portrait: true },
     ],
     title: "EL REGISTRO QUE NO CIERRA",
@@ -338,7 +404,7 @@ const MISSIONS = [
     name: "EP.2 — LA SEMANA FANTASMA",
     concepts: "PROMEDIO · MAX · MIN",
     briefing: [
-      { speaker: "MARTA", text: "Volviste. Bien. Anoche encontré este cuaderno viejo en el sótano... tiene las ventas de una semana de 1983 que nadie recuerda.", portrait: true },
+      { speaker: "MARTA", text: "Volviste. Bien. Anoche encontré este cuaderno viejo en el sótano... tiene las ventas de una semana de 1983 que nadie recuerda.", portrait: true, bg: "basement" },
       { speaker: "MARTA", text: "Quiero entender esa semana: cuánto se vendía en un día típico, cuál fue el mejor día y cuál el peor.", portrait: true },
       { speaker: "MARTA", text: "Sumar ya sabés. Pero para esto hay funciones nuevas... vas a tener que descubrirlas. El botón 💡 PISTA sigue ahí.", portrait: true },
     ],
@@ -668,7 +734,7 @@ const MISSIONS = [
       { speaker: "MARTA", text: "Total, promedio, la venta más alta, cuántos vinilos, y el dato de un código puntual. Sin ayuda esta vez... bueno, las pistas siguen ahí. Pero intentalo solo.", portrait: true },
     ],
     outro: [
-      { speaker: "MARTA", text: "Informe completo. El crédito está renovado... y la luz del sótano no parpadeó ni una vez este mes.", portrait: true },
+      { speaker: "MARTA", text: "Informe completo. El crédito está renovado... y la luz del sótano no parpadeó ni una vez este mes.", portrait: true, bg: "basement" },
       { speaker: "MARTA", text: "Ya no te necesito... pero el pueblo sí. Dicen que en la biblioteca hay planillas de hace 40 años que nadie pudo abrir. Power Query, les dicen. Pero esa... esa es otra historia.", portrait: true },
       { speaker: "", text: "FIN DE LA TEMPORADA 1 — GRACIAS POR JUGAR", portrait: false },
     ],
@@ -752,7 +818,7 @@ const MISSIONS = [
     name: "EP.7 — EL SEMÁFORO DE STOCK",
     concepts: "SI · Y · O (decisiones)",
     intro: [
-      { speaker: "", text: "Pasaron unos meses. El negocio funciona mejor... pero ahora hay decisiones más finas que tomar.", portrait: false },
+      { speaker: "", text: "Pasaron unos meses. El negocio funciona mejor... pero ahora hay decisiones más finas que tomar.", portrait: false, bg: "town" },
     ],
     briefing: [
       { speaker: "MARTA", text: "Mirá esta lista de stock. Necesito que la planilla me diga sola cuáles hay que reponer... sin que yo tenga que revisarlas una por una.", portrait: true },
@@ -906,7 +972,7 @@ const MISSIONS = [
     name: "EP.9 — EL EXPEDIENTE ANTIGUO",
     concepts: "BUSCARX · AÑO (fechas)",
     briefing: [
-      { speaker: "MARTA", text: "Encontré una caja en el sótano: fichas de compras viejas, de antes de que yo llevara la tienda. Están ordenadas por código, no por nombre.", portrait: true },
+      { speaker: "MARTA", text: "Encontré una caja en el sótano: fichas de compras viejas, de antes de que yo llevara la tienda. Están ordenadas por código, no por nombre.", portrait: true, bg: "basement" },
       { speaker: "MARTA", text: "Con BUSCARV esto no se puede: el nombre del producto está a la IZQUIERDA del código, y esa función solo mira hacia la derecha.", portrait: true },
       { speaker: "MARTA", text: "Por suerte existe una versión más moderna, sin esa restricción.", portrait: true },
     ],
@@ -1039,7 +1105,8 @@ function typeText(str) {
 function renderScene() {
   const scene = currentQueue[queueIndex];
   el.speaker.textContent = scene.speaker || "";
-  if (scene.portrait) showPortrait(); else hidePortrait();
+  if (scene.portrait) showPortrait(scene.mood); else hidePortrait();
+  setBackdrop(scene.bg || (scene.portrait ? "shop" : null));
   typeText(scene.text);
 }
 
@@ -1448,6 +1515,7 @@ setupFormulaBar("tutorial-sheet");
 function renderMap() {
   showScreen(el.mapScreen);
   hidePortrait();
+  document.getElementById("map-backdrop").innerHTML = buildTownBackdrop();
   el.mapMissions.innerHTML = "";
 
   const tutCard = document.createElement("div");
@@ -1620,6 +1688,7 @@ function startMission(m) {
 function showTutorialChoice(next) {
   el.speaker.textContent = "MARTA";
   showPortrait();
+  setBackdrop("shop");
   el.text.textContent = "Antes de empezar... ¿usaste alguna vez una planilla de cálculo?";
   el.btnContinue.classList.add("hidden");
 
