@@ -182,56 +182,15 @@ window.BUSCARV = function () {
 
 /* ---------- 1. Arte pixel ---------- */
 
-function pixelSVG(rows, palette, cell) {
-  const w = rows[0].length;
-  const h = rows.length;
-  let rects = "";
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const ch = rows[y][x];
-      if (ch === ".") continue;
-      rects += `<rect x="${x * cell}" y="${y * cell}" width="${cell}" height="${cell}" fill="${palette[ch]}"/>`;
-    }
-  }
-  return `<svg viewBox="0 0 ${w * cell} ${h * cell}" width="${w * 8}" height="${h * 8}" xmlns="http://www.w3.org/2000/svg">${rects}</svg>`;
-}
-
-const MARTA_ROWS = [
-  "................",
-  "....HHHHHHHH....",
-  "...HHHHHHHHHH...",
-  "..HHHHHHHHHHHH..",
-  "..HHSSSSSSSSHH..",
-  "..HSSSSSSSSSSH..",
-  "..HSSEESSEESSH..",
-  "..HSSSSSSSSSSH..",
-  "..HSSSOOOOSSSH..",
-  "..HHSSSSSSSSHH..",
-  "...HHSSSSSSHH...",
-  "....HHSSSSHH....",
-  "...RRRRRRRRRR...",
-  "..RRRRRRRRRRRR..",
-  ".RRRRRRRRRRRRRR.",
-  "RRRRRRRRRRRRRRRR",
-  "RRRRCCCCCCCCRRRR",
-  "RRRRRRRRRRRRRRRR",
-  "RRRRRRRRRRRRRRRR",
-  "................",
-];
-
-/* Variante "preocupada": mismas filas, cejas fruncidas agregadas a la altura de los ojos */
-const MARTA_ROWS_WORRIED = MARTA_ROWS.map((row, i) =>
-  i === 5 ? "..HSSBBSSBBSSH.." : row
-);
-
-const MARTA_PALETTE = {
-  H: "#3a2350", S: "#e8c39e", E: "#141414",
-  O: "#7a4a2c", R: "#b5293b", C: "#7c1a28", B: "#8a1f2f",
+const MARTA_PORTRAIT_BY_MOOD = {
+  worried: "img/marta_front.png",
+  celebrating: "img/marta_celebrating.png",
 };
 
 function showPortrait(mood) {
-  const rows = mood === "worried" ? MARTA_ROWS_WORRIED : MARTA_ROWS;
-  document.getElementById("portrait").innerHTML = pixelSVG(rows, MARTA_PALETTE, 10);
+  const src = MARTA_PORTRAIT_BY_MOOD[mood] || "img/marta_front.png";
+  document.getElementById("portrait").innerHTML =
+    `<img src="${src}" alt="Marta" class="${mood === "worried" ? "worried" : ""}">`;
 }
 function hidePortrait() {
   document.getElementById("portrait").innerHTML = "";
@@ -334,7 +293,7 @@ const MISSIONS = [
       { speaker: "MARTA", text: "Si te trabás, apretá el botón 💡 PISTA. Para eso está.", portrait: true },
     ],
     outro: [
-      { speaker: "MARTA", text: "¡Cerró perfecto! Mirá — la luz del sótano dejó de parpadear.", portrait: true, bg: "basement" },
+      { speaker: "MARTA", text: "¡Cerró perfecto! Mirá — la luz del sótano dejó de parpadear.", portrait: true, mood: "celebrating", bg: "basement" },
       { speaker: "MARTA", text: "Pero esto era solo el principio. Volvé mañana... los números de este pueblo esconden más secretos.", portrait: true },
     ],
     title: "EL REGISTRO QUE NO CIERRA",
@@ -482,7 +441,7 @@ const MISSIONS = [
       { speaker: "MARTA", text: "Contar y sumar ya sabés... pero acá hay que contar y sumar SOLO LO QUE CUMPLE UNA CONDICIÓN. Eso es nuevo.", portrait: true },
     ],
     outro: [
-      { speaker: "MARTA", text: "4 cassettes vendidos y $7.500 de vinilos. Exactamente lo que decía el proveedor. Misterio resuelto.", portrait: true },
+      { speaker: "MARTA", text: "4 cassettes vendidos y $7.500 de vinilos. Exactamente lo que decía el proveedor. Misterio resuelto.", portrait: true, mood: "celebrating" },
       { speaker: "MARTA", text: "Lo que acabás de hacer — filtrar con una condición — es la base de TODO el análisis de datos. Lo que viene ahora... buscar datos entre miles de filas. Pero eso es otra noche.", portrait: true },
     ],
     title: "CASSETTES CONTRA VINILOS",
@@ -734,7 +693,7 @@ const MISSIONS = [
       { speaker: "MARTA", text: "Total, promedio, la venta más alta, cuántos vinilos, y el dato de un código puntual. Sin ayuda esta vez... bueno, las pistas siguen ahí. Pero intentalo solo.", portrait: true },
     ],
     outro: [
-      { speaker: "MARTA", text: "Informe completo. El crédito está renovado... y la luz del sótano no parpadeó ni una vez este mes.", portrait: true, bg: "basement" },
+      { speaker: "MARTA", text: "Informe completo. El crédito está renovado... y la luz del sótano no parpadeó ni una vez este mes.", portrait: true, mood: "celebrating", bg: "basement" },
       { speaker: "MARTA", text: "Ya no te necesito... pero el pueblo sí. Dicen que en la biblioteca hay planillas de hace 40 años que nadie pudo abrir. Power Query, les dicen. Pero esa... esa es otra historia.", portrait: true },
     ],
     title: "EL INFORME FINAL",
@@ -1061,7 +1020,7 @@ const MISSIONS = [
       { speaker: "MARTA", text: "Lista limpia, sin repetidos, con el precio de cada producto. Y si mañana llega otro archivo desprolijo, aplicás la misma consulta de nuevo.", portrait: true },
       { speaker: "MARTA", text: "Eso que armaste es, en chiquito, lo que hace Power Query en el Excel de verdad: automatizar la limpieza de datos, paso por paso.", portrait: true },
       { speaker: "MARTA", text: "Lo que sigue ya no te lo puedo enseñar acá adentro: con estos datos limpios, se arman paneles — Business Intelligence — gráficos y números que se actualizan solos cada vez que cambia la planilla. Power BI, Excel real, todo conectado.", portrait: true },
-      { speaker: "MARTA", text: "Bien. Llegaste hasta acá. El pueblo ya no tiene ningún número que no cierre... por ahora.", portrait: true },
+      { speaker: "MARTA", text: "Bien. Llegaste hasta acá. El pueblo ya no tiene ningún número que no cierre... por ahora.", portrait: true, mood: "celebrating" },
       { speaker: "", text: "FIN DE LA TEMPORADA 1 — GRACIAS POR JUGAR", portrait: false, bg: "town" },
     ],
     title: "EL ARCHIVO DEL SISTEMA VIEJO",

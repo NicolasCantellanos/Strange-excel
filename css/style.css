@@ -241,6 +241,18 @@ html,body{
   filter:drop-shadow(0 0 18px rgba(255,59,59,0.25));
 }
 
+#portrait img{
+  display:block;
+  max-height:260px;
+  width:auto;
+  image-rendering:pixelated;
+  filter:drop-shadow(0 0 18px rgba(255,59,59,0.25));
+}
+
+#portrait img.worried{
+  filter:drop-shadow(0 0 18px rgba(255,59,59,0.25)) saturate(0.6) brightness(0.82) sepia(0.15);
+}
+
 #dialogue-box{
   position:relative;
   z-index:1;
