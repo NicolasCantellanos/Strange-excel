@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsuites@4/dist/jsuites.css" type="text/css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4/dist/jspreadsheet.css" type="text/css" />
 
-<link rel="stylesheet" href="css/style.css?v=17" />
+<link rel="stylesheet" href="css/style.css?v=18" />
 </head>
 <body>
 
@@ -95,10 +95,43 @@
     <div id="hint-box" class="hidden"></div>
   </section>
 
+  <!-- Pantalla de la mision tipo "consulta" (simulación de Power Query) -->
+  <section id="query-screen" class="screen hidden">
+    <h1 id="query-title">EL ARCHIVO DEL SISTEMA VIEJO</h1>
+
+    <div id="query-instructions"></div>
+
+    <div id="query-workspace">
+      <div class="query-panel">
+        <h3>DATOS CRUDOS</h3>
+        <table id="query-raw-table" class="query-table"></table>
+      </div>
+      <div class="query-panel">
+        <h3>PASOS DISPONIBLES</h3>
+        <div id="query-available-list" class="query-step-list"></div>
+        <h3 class="query-applied-heading">PASOS APLICADOS</h3>
+        <div id="query-applied-list" class="query-step-list"></div>
+        <button id="btn-query-undo" class="pixel-btn ghost small-btn">↺ deshacer último paso</button>
+      </div>
+      <div class="query-panel">
+        <h3>VISTA PREVIA</h3>
+        <table id="query-preview-table" class="query-table"></table>
+      </div>
+    </div>
+
+    <div id="query-controls">
+      <button id="btn-query-verify" class="pixel-btn">verificar</button>
+      <button id="btn-query-hint" class="pixel-btn hint-btn">💡 pista</button>
+      <button id="btn-back-query" class="pixel-btn ghost">◀ volver al mapa</button>
+      <div id="query-feedback"></div>
+    </div>
+    <div id="query-hint-box" class="hidden"></div>
+  </section>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/jsuites@4/dist/jsuites.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4/dist/index.js"></script>
-<script src="js/game.js?v=17"></script>
+<script src="js/game.js?v=18"></script>
 </body>
 </html>

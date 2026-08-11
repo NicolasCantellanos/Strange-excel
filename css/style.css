@@ -574,6 +574,129 @@ html,body{
   margin-top:4px;
 }
 
+/* ---------- Pantalla de consulta (simulación de Power Query) ---------- */
+
+#query-title{
+  font-family:'Press Start 2P', monospace;
+  font-size:20px;
+  color:var(--neon-cyan);
+  text-shadow:0 0 10px rgba(55,240,216,0.5);
+  text-align:center;
+  margin:10px 0 24px;
+}
+
+#query-instructions{
+  background:var(--panel);
+  border:3px solid var(--panel-border);
+  padding:16px 20px;
+  margin-bottom:18px;
+  font-size:22px;
+  line-height:1.45;
+}
+
+#query-workspace{
+  display:grid;
+  grid-template-columns:1fr 1.2fr 1fr;
+  gap:14px;
+  margin-bottom:18px;
+}
+@media (max-width:900px){
+  #query-workspace{ grid-template-columns:1fr; }
+}
+
+.query-panel{
+  background:var(--panel);
+  border:3px solid var(--panel-border);
+  padding:12px 14px;
+}
+.query-panel h3{
+  font-family:'Press Start 2P', monospace;
+  font-size:10px;
+  color:var(--warn);
+  margin:0 0 10px;
+}
+.query-applied-heading{ margin-top:16px !important; }
+
+.query-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:19px;
+}
+.query-table td, .query-table th{
+  border-bottom:1px solid var(--panel-border);
+  padding:4px 6px;
+  text-align:left;
+  color:var(--text);
+}
+.query-table th{
+  color:var(--neon-cyan);
+  font-size:16px;
+  text-transform:uppercase;
+}
+.query-table td.query-empty{ color:var(--text-dim); }
+
+.query-step-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:24px;
+}
+
+.query-step-btn{
+  font-family:'VT323', monospace;
+  font-size:18px;
+  text-align:left;
+  background:#12182a;
+  color:var(--text);
+  border:2px solid var(--panel-border);
+  padding:8px 12px;
+  cursor:pointer;
+}
+.query-step-btn:hover{ border-color:var(--neon-cyan); color:var(--neon-cyan); }
+
+.query-step-applied{
+  font-family:'VT323', monospace;
+  font-size:18px;
+  background:#0d2420;
+  color:var(--ok);
+  border:2px solid #1f4a3e;
+  padding:8px 12px;
+}
+.query-step-applied .query-step-num{
+  font-family:'Press Start 2P', monospace;
+  font-size:10px;
+  color:var(--text-dim);
+  margin-right:8px;
+}
+
+#query-controls{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+#query-feedback{ font-size:22px; }
+#query-feedback.ok{ color:var(--ok); }
+#query-feedback.bad{ color:var(--neon-red); }
+
+#query-hint-box{
+  margin-top:14px;
+  background:#1c1706;
+  border:3px solid #5a4a16;
+  padding:14px 18px;
+  font-size:22px;
+  color:var(--warn);
+  line-height:1.4;
+}
+#query-hint-box .hint-count{
+  font-family:'Press Start 2P', monospace;
+  font-size:10px;
+  display:block;
+  margin-bottom:8px;
+  color:#a89040;
+}
+
 @media (max-width:600px){
   body{font-size:18px;}
   #dialogue-text{font-size:20px;}

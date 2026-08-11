@@ -736,7 +736,6 @@ const MISSIONS = [
     outro: [
       { speaker: "MARTA", text: "Informe completo. El crédito está renovado... y la luz del sótano no parpadeó ni una vez este mes.", portrait: true, bg: "basement" },
       { speaker: "MARTA", text: "Ya no te necesito... pero el pueblo sí. Dicen que en la biblioteca hay planillas de hace 40 años que nadie pudo abrir. Power Query, les dicen. Pero esa... esa es otra historia.", portrait: true },
-      { speaker: "", text: "FIN DE LA TEMPORADA 1 — GRACIAS POR JUGAR", portrait: false },
     ],
     title: "EL INFORME FINAL",
     lookup: { x0: 0, y0: 0, cols: 3, rows: 8 },
@@ -1046,11 +1045,109 @@ const MISSIONS = [
       },
     ],
   },
+
+  {
+    id: 10,
+    type: "query",
+    name: "EP.10 — EL ARCHIVO DEL SISTEMA VIEJO",
+    concepts: "Power Query: limpiar datos en pasos, en orden",
+    briefing: [
+      { speaker: "MARTA", text: "El sistema viejo del depósito por fin arrancó... y escupió esto.", portrait: true, mood: "worried" },
+      { speaker: "MARTA", text: "Es la lista de productos de hace años, exportada mil veces por gente distinta: el mismo producto escrito de formas distintas cada vez.", portrait: true },
+      { speaker: "MARTA", text: "Esto ya no se arregla con una fórmula suelta. Hay que armar una CONSULTA: una serie de PASOS, uno atrás del otro, que limpien los datos solos.", portrait: true },
+      { speaker: "MARTA", text: "Lo bueno de una consulta: el día que llegue otro archivo así de desprolijo, aplicás los mismos pasos y listo — no hay que rehacer nada a mano.", portrait: true },
+    ],
+    outro: [
+      { speaker: "MARTA", text: "Lista limpia, sin repetidos, con el precio de cada producto. Y si mañana llega otro archivo desprolijo, aplicás la misma consulta de nuevo.", portrait: true },
+      { speaker: "MARTA", text: "Eso que armaste es, en chiquito, lo que hace Power Query en el Excel de verdad: automatizar la limpieza de datos, paso por paso.", portrait: true },
+      { speaker: "MARTA", text: "Lo que sigue ya no te lo puedo enseñar acá adentro: con estos datos limpios, se arman paneles — Business Intelligence — gráficos y números que se actualizan solos cada vez que cambia la planilla. Powr BI, Excel real, todo conectado.", portrait: true },
+      { speaker: "MARTA", text: "Bien. Llegaste hasta acá. El pueblo ya no tiene ningún número que no cierre... por ahora.", portrait: true },
+      { speaker: "", text: "FIN DE LA TEMPORADA 1 — GRACIAS POR JUGAR", portrait: false, bg: "town" },
+    ],
+    title: "EL ARCHIVO DEL SISTEMA VIEJO",
+    query: {
+      raw: [
+        " cassette blondie ",
+        "Cassette Blondie",
+        "VINILO BOWIE",
+        "cassette QUEEN",
+        " Vinilo Bowie",
+        "CASSETTE queen ",
+      ],
+      priceTable: { "Cassette Blondie": 800, "Vinilo Bowie": 1500, "Cassette Queen": 800 },
+      target: [
+        { producto: "Cassette Blondie", precio: 800 },
+        { producto: "Vinilo Bowie", precio: 1500 },
+        { producto: "Cassette Queen", precio: 800 },
+      ],
+      steps: [
+        {
+          id: "trim",
+          label: "Quitar espacios extra",
+          fn: (rows) => rows.map((r) => ({ ...r, producto: r.producto.replace(/^\s+|\s+$/g, "") })),
+        },
+        {
+          id: "titlecase",
+          label: "Formato Título (cassette BLONDIE → Cassette Blondie)",
+          fn: (rows) => rows.map((r) => ({ ...r, producto: r.producto.toLowerCase().replace(/\b\p{L}/gu, (c) => c.toUpperCase()) })),
+        },
+        {
+          id: "dedupe",
+          label: "Quitar filas duplicadas",
+          fn: (rows) => {
+            const seen = new Set();
+            return rows.filter((r) => {
+              if (seen.has(r.producto)) return false;
+              seen.add(r.producto);
+              return true;
+            });
+          },
+        },
+        {
+          id: "merge",
+          label: "Combinar con Tabla de Precios",
+          fn: (rows) => rows.map((r) => ({ ...r, precio: mission.query.priceTable[r.producto] ?? null })),
+        },
+      ],
+      stages: [
+        {
+          instructions: `<span class="stage-label">CONSULTA — PARTE 1 de 2</span>
+            Los productos están repetidos y escritos de formas distintas. Agregá pasos (en el orden que quieras) hasta que la vista previa muestre <b>3 productos únicos, bien escritos</b>, sin la columna de precio todavía.<br>
+            <span style="color:var(--text-dim);">Mirá la vista previa después de cada paso — te muestra si algo quedó raro. Podés deshacer el último paso si te equivocás.</span>`,
+          hints: [
+            "Antes de sacar los duplicados, los textos tienen que quedar IGUALES entre sí (mismos espacios, mismas mayúsculas) — si no, Excel no los reconoce como el mismo producto.",
+            "Empezá por 'Quitar espacios extra' y 'Formato Título'. Recién ahí 'Quitar filas duplicadas' va a funcionar bien.",
+            "Orden sugerido: Quitar espacios extra → Formato Título → Quitar filas duplicadas.",
+          ],
+          check(rows) {
+            const ok = rows.length === 3 && rows.every((r) => ["Cassette Blondie", "Vinilo Bowie", "Cassette Queen"].includes(r.producto));
+            return { ok, feedback: ok
+              ? "¡3 productos limpios y sin repetidos!"
+              : `Todavía hay ${rows.length} filas en la vista previa (debería haber 3, bien escritas). (¿Necesitás una 💡 PISTA?)` };
+          },
+        },
+        {
+          instructions: `<span class="success">✔ Lista limpia: 3 productos únicos.</span>
+            <span class="stage-label" style="margin-top:10px;">CONSULTA — PARTE 2 de 2</span>
+            Ahora agregá el último paso: sumar el <b>precio</b> de cada producto desde la Tabla de Precios.`,
+          hints: [
+            "Falta un paso que agregue la columna de precio, buscando cada producto en la Tabla de Precios.",
+            "Es el paso 'Combinar con Tabla de Precios' — funciona porque los nombres ya están limpios y coinciden.",
+            "Agregá el paso 'Combinar con Tabla de Precios' al final de la lista.",
+          ],
+          check(rows) {
+            const ok = rows.length === 3 && rows.every((r) => r.precio === mission.query.priceTable[r.producto]);
+            return { ok, feedback: ok
+              ? "¡Consulta completa! Datos limpios, sin repetidos, con precio."
+              : "Falta (o está mal) el precio de algún producto. (¿Necesitás una 💡 PISTA?)" };
+          },
+        },
+      ],
+    },
+  },
 ];
 
-const COMING_SOON = [
-  { name: "EP.10 — ???", concepts: "Power Query y BI en el Excel real" },
-];
+const COMING_SOON = [];
 
 /* ---------- 4. Referencias de pantalla ---------- */
 
@@ -1060,6 +1157,7 @@ const el = {
   sceneScreen: document.getElementById("scene-screen"),
   tutorialScreen: document.getElementById("tutorial-screen"),
   puzzleScreen: document.getElementById("puzzle-screen"),
+  queryScreen: document.getElementById("query-screen"),
   mapMissions: document.getElementById("map-missions"),
   speaker: document.getElementById("speaker-name"),
   text: document.getElementById("dialogue-text"),
@@ -1078,7 +1176,7 @@ const el = {
 };
 
 function showScreen(which) {
-  [el.menuScreen, el.mapScreen, el.sceneScreen, el.tutorialScreen, el.puzzleScreen]
+  [el.menuScreen, el.mapScreen, el.sceneScreen, el.tutorialScreen, el.puzzleScreen, el.queryScreen]
     .forEach((s) => s.classList.add("hidden"));
   which.classList.remove("hidden");
 }
@@ -1095,6 +1193,7 @@ document.getElementById("btn-menu-play").addEventListener("click", renderMap);
 document.getElementById("btn-map-menu").addEventListener("click", renderMenu);
 document.getElementById("btn-back-tutorial").addEventListener("click", renderMap);
 document.getElementById("btn-back-puzzle").addEventListener("click", renderMap);
+document.getElementById("btn-back-query").addEventListener("click", renderMap);
 
 /* ---------- 5. Motor de diálogo ---------- */
 
@@ -1688,7 +1787,8 @@ function rawAt(s, x, y) {
 
 function startMission(m) {
   mission = m;
-  const goBriefing = () => playScenes(m.briefing, () => startPuzzle(m));
+  const startWhatever = m.type === "query" ? () => startQueryMission(m) : () => startPuzzle(m);
+  const goBriefing = () => playScenes(m.briefing, startWhatever);
   if (m.intro && !isDone(m.id)) {
     playScenes(m.intro, () => {
       if (m.offerTutorial) showTutorialChoice(goBriefing);
@@ -1791,6 +1891,141 @@ el.btnVerify.addEventListener("click", () => {
     el.instructions.innerHTML = currentStage().instructions;
   } else {
     el.btnVerify.disabled = true;
+    markDone(mission.id);
+    setTimeout(() => { playScenes(mission.outro, renderMap); }, 1600);
+  }
+});
+
+/* ---------- 9b. Motor de misión tipo "consulta" (Power Query simulado) ---------- */
+
+let queryStageIndex = 0;
+let queryAppliedSteps = [];
+let queryHintIndex = 0;
+
+function qEl(id) { return document.getElementById(id); }
+
+function rowsToRaw(strings) {
+  return strings.map((s) => ({ producto: s }));
+}
+
+function computeQueryRows() {
+  let rows = rowsToRaw(mission.query.raw);
+  queryAppliedSteps.forEach((stepId) => {
+    const step = mission.query.steps.find((s) => s.id === stepId);
+    if (step) rows = step.fn(rows);
+  });
+  return rows;
+}
+
+function renderQueryRawTable() {
+  qEl("query-raw-table").innerHTML =
+    `<tr><th>Producto (crudo)</th></tr>` +
+    mission.query.raw.map((r) => `<tr><td>"${r}"</td></tr>`).join("");
+}
+
+function renderQueryPreview() {
+  const rows = computeQueryRows();
+  const hasPrice = rows.some((r) => r.precio !== undefined);
+  const header = hasPrice ? "<tr><th>Producto</th><th>Precio</th></tr>" : "<tr><th>Producto</th></tr>";
+  const body = rows.length
+    ? rows.map((r) => hasPrice
+        ? `<tr><td>${r.producto}</td><td>${r.precio === null || r.precio === undefined ? "?" : "$" + r.precio}</td></tr>`
+        : `<tr><td>${r.producto}</td></tr>`).join("")
+    : `<tr><td class="query-empty">(sin filas)</td></tr>`;
+  qEl("query-preview-table").innerHTML = header + body;
+}
+
+function renderQueryAvailableList() {
+  const wrap = qEl("query-available-list");
+  wrap.innerHTML = "";
+  mission.query.steps.forEach((step) => {
+    const btn = document.createElement("button");
+    btn.className = "query-step-btn";
+    btn.textContent = "+ " + step.label;
+    btn.onclick = () => addQueryStep(step.id);
+    wrap.appendChild(btn);
+  });
+}
+
+function renderQueryAppliedList() {
+  const wrap = qEl("query-applied-list");
+  wrap.innerHTML = "";
+  if (!queryAppliedSteps.length) {
+    wrap.innerHTML = `<span style="color:var(--text-dim);">(todavía ningún paso)</span>`;
+    return;
+  }
+  queryAppliedSteps.forEach((stepId, i) => {
+    const step = mission.query.steps.find((s) => s.id === stepId);
+    const div = document.createElement("div");
+    div.className = "query-step-applied";
+    div.innerHTML = `<span class="query-step-num">${i + 1}</span>${step ? step.label : stepId}`;
+    wrap.appendChild(div);
+  });
+}
+
+function addQueryStep(stepId) {
+  queryAppliedSteps.push(stepId);
+  renderQueryAppliedList();
+  renderQueryPreview();
+}
+
+function undoQueryStep() {
+  queryAppliedSteps.pop();
+  renderQueryAppliedList();
+  renderQueryPreview();
+}
+
+document.getElementById("btn-query-undo").addEventListener("click", undoQueryStep);
+
+function currentQueryStage() { return mission.query.stages[queryStageIndex]; }
+
+function resetQueryHints() {
+  queryHintIndex = 0;
+  qEl("query-hint-box").classList.add("hidden");
+  qEl("query-hint-box").innerHTML = "";
+}
+
+function showNextQueryHint() {
+  const hints = currentQueryStage().hints;
+  if (queryHintIndex < hints.length) queryHintIndex++;
+  const shown = hints.slice(0, queryHintIndex)
+    .map((h) => `<div style="margin-bottom:8px;">💡 ${h}</div>`).join("");
+  qEl("query-hint-box").innerHTML = `<span class="hint-count">PISTA ${queryHintIndex} DE ${hints.length}</span>${shown}`;
+  qEl("query-hint-box").classList.remove("hidden");
+}
+
+document.getElementById("btn-query-hint").addEventListener("click", showNextQueryHint);
+
+function startQueryMission(m) {
+  showScreen(el.queryScreen);
+  queryStageIndex = 0;
+  queryAppliedSteps = [];
+  resetQueryHints();
+  qEl("query-feedback").textContent = "";
+  qEl("query-feedback").className = "";
+  qEl("btn-query-verify").disabled = false;
+  qEl("query-title").textContent = m.title;
+  qEl("query-instructions").innerHTML = m.query.stages[0].instructions;
+  renderQueryRawTable();
+  renderQueryAvailableList();
+  renderQueryAppliedList();
+  renderQueryPreview();
+}
+
+document.getElementById("btn-query-verify").addEventListener("click", () => {
+  const rows = computeQueryRows();
+  const result = currentQueryStage().check(rows);
+  const fb = qEl("query-feedback");
+  fb.textContent = result.feedback;
+  fb.className = result.ok ? "ok" : "bad";
+  if (!result.ok) return;
+
+  if (queryStageIndex < mission.query.stages.length - 1) {
+    queryStageIndex++;
+    resetQueryHints();
+    qEl("query-instructions").innerHTML = currentQueryStage().instructions;
+  } else {
+    qEl("btn-query-verify").disabled = true;
     markDone(mission.id);
     setTimeout(() => { playScenes(mission.outro, renderMap); }, 1600);
   }
