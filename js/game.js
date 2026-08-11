@@ -1060,7 +1060,7 @@ const MISSIONS = [
     outro: [
       { speaker: "MARTA", text: "Lista limpia, sin repetidos, con el precio de cada producto. Y si mañana llega otro archivo desprolijo, aplicás la misma consulta de nuevo.", portrait: true },
       { speaker: "MARTA", text: "Eso que armaste es, en chiquito, lo que hace Power Query en el Excel de verdad: automatizar la limpieza de datos, paso por paso.", portrait: true },
-      { speaker: "MARTA", text: "Lo que sigue ya no te lo puedo enseñar acá adentro: con estos datos limpios, se arman paneles — Business Intelligence — gráficos y números que se actualizan solos cada vez que cambia la planilla. Powr BI, Excel real, todo conectado.", portrait: true },
+      { speaker: "MARTA", text: "Lo que sigue ya no te lo puedo enseñar acá adentro: con estos datos limpios, se arman paneles — Business Intelligence — gráficos y números que se actualizan solos cada vez que cambia la planilla. Power BI, Excel real, todo conectado.", portrait: true },
       { speaker: "MARTA", text: "Bien. Llegaste hasta acá. El pueblo ya no tiene ningún número que no cierre... por ahora.", portrait: true },
       { speaker: "", text: "FIN DE LA TEMPORADA 1 — GRACIAS POR JUGAR", portrait: false, bg: "town" },
     ],
