@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsuites@4/dist/jsuites.css" type="text/css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4/dist/jspreadsheet.css" type="text/css" />
 
-<link rel="stylesheet" href="css/style.css?v=16" />
+<link rel="stylesheet" href="css/style.css?v=17" />
 </head>
 <body>
 
@@ -19,16 +19,28 @@
 
 <div id="game">
 
+  <!-- Menú de inicio -->
+  <section id="menu-screen" class="screen">
+    <div id="menu-backdrop"></div>
+    <h1 id="menu-title">STRANGE EXCEL</h1>
+    <p id="menu-subtitle">Un juego para aprender Excel de verdad</p>
+    <div id="menu-options">
+      <button id="btn-menu-play" class="pixel-btn menu-option">▶ JUGAR</button>
+      <a id="btn-menu-youtube" class="pixel-btn ghost menu-option" href="https://www.youtube.com/watch?v=MXFQGJo4YxE&list=PL5VrDoQ0dIAa0LXoczwOOP_-vrvLKugHh" target="_blank" rel="noopener noreferrer">🎥 CLASES DEL PROFE (YouTube)</a>
+    </div>
+  </section>
+
   <!-- Mapa de misiones -->
   <section id="map-screen" class="screen hidden">
     <div id="map-backdrop"></div>
+    <button id="btn-map-menu" class="pixel-btn ghost small-btn">◀ menú</button>
     <h1 id="map-title">STRANGE EXCEL</h1>
     <p id="map-subtitle">Vallenoche, 1986. Algo raro pasa con los números del pueblo.</p>
     <div id="map-missions"></div>
   </section>
 
   <!-- Pantalla de dialogo / historia -->
-  <section id="scene-screen" class="screen">
+  <section id="scene-screen" class="screen hidden">
     <div id="scene-backdrop"></div>
     <div id="portrait-wrap"><div id="portrait"></div></div>
 
@@ -58,6 +70,7 @@
     <div id="tutorial-controls">
       <button id="btn-tutorial-done" class="pixel-btn hidden">ir a la misión ▶</button>
       <button id="btn-skip-tutorial" class="pixel-btn ghost">saltar entrenamiento</button>
+      <button id="btn-back-tutorial" class="pixel-btn ghost">◀ volver al mapa</button>
     </div>
   </section>
 
@@ -76,6 +89,7 @@
     <div id="puzzle-controls">
       <button id="btn-verify" class="pixel-btn">verificar</button>
       <button id="btn-hint" class="pixel-btn hint-btn">💡 pista</button>
+      <button id="btn-back-puzzle" class="pixel-btn ghost">◀ volver al mapa</button>
       <div id="feedback"></div>
     </div>
     <div id="hint-box" class="hidden"></div>
@@ -85,6 +99,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/jsuites@4/dist/jsuites.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspreadsheet-ce@4/dist/index.js"></script>
-<script src="js/game.js?v=16"></script>
+<script src="js/game.js?v=17"></script>
 </body>
 </html>

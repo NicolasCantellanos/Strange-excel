@@ -1055,6 +1055,7 @@ const COMING_SOON = [
 /* ---------- 4. Referencias de pantalla ---------- */
 
 const el = {
+  menuScreen: document.getElementById("menu-screen"),
   mapScreen: document.getElementById("map-screen"),
   sceneScreen: document.getElementById("scene-screen"),
   tutorialScreen: document.getElementById("tutorial-screen"),
@@ -1077,10 +1078,23 @@ const el = {
 };
 
 function showScreen(which) {
-  [el.mapScreen, el.sceneScreen, el.tutorialScreen, el.puzzleScreen]
+  [el.menuScreen, el.mapScreen, el.sceneScreen, el.tutorialScreen, el.puzzleScreen]
     .forEach((s) => s.classList.add("hidden"));
   which.classList.remove("hidden");
 }
+
+/* ---------- 3b. Menú de inicio ---------- */
+
+function renderMenu() {
+  showScreen(el.menuScreen);
+  hidePortrait();
+  document.getElementById("menu-backdrop").innerHTML = buildTownBackdrop();
+}
+
+document.getElementById("btn-menu-play").addEventListener("click", renderMap);
+document.getElementById("btn-map-menu").addEventListener("click", renderMenu);
+document.getElementById("btn-back-tutorial").addEventListener("click", renderMap);
+document.getElementById("btn-back-puzzle").addEventListener("click", renderMap);
 
 /* ---------- 5. Motor de diálogo ---------- */
 
@@ -1784,4 +1798,4 @@ el.btnVerify.addEventListener("click", () => {
 
 /* ---------- 10. Arranque ---------- */
 
-renderMap();
+renderMenu();
